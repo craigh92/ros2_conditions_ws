@@ -1,7 +1,7 @@
 from rclpy.node import Node
 from rclpy.task import Future
-from conditions.message_equality_tester import MessageEqualityTester, default_callback
-from typing import Dict, Any
+from conditions.message_equality_tester import MessageEqualityTester, default_callback, MultiMessageEqualityTester, EqualityType, TopicAndValuesPair
+from typing import Dict, Any, List
 import os
 
 class MessageEqualityTesterNode(Node):
@@ -21,9 +21,34 @@ class MessageEqualityTesterNode(Node):
         self.__future_result = future_result
 
     def __callback(self, val : bool, actual_msg : Dict, expected_values : Dict):
-        self.get_logger().info("Message received and equality tested: {}".format(str(val)))
+        self.get_logger().info("Message received and equality tested:quality tested: {}".format(str(val)))
         if val is False:
-            self.get_logger().info("Expected: {}".format(str(expected_values)))
-            self.get_logger().info("Actual: {}".format(str(actual_msg)))
+            self.get_logger().info("\tExpected: {}".format(str(expected_values)))
+            self.get_logger().info("\tActual: {}".format(str(actual_msg)))
 
         self.__future_result.set_result(val)
+
+class MultiMessageEqualityTesterNode(Node):
+
+    def __init__(self, topic_and_expected_values_pairs : List[TopicAndValuesPair],
+        eqaulity_type : EqualityType, future_result : Future):
+
+        super().__init__('multi_message_equality_tester' + str(os.getpid()))
+
+        self.__tester = MultiMessageEqualityTester(self, topic_and_expected_values_pairs,
+            eqaulity_type, self.__callback)
+
+        self.__future_result = future_result
+    
+    def __callback(self, val : bool,
+        message_checks : Dict[str,bool], comparison : TopicAndValuesPair,
+        equality_type : EqualityType):
+
+        self.get_logger().info("Message received and equality tested:quality tested: {}".format(str(val)))
+        if val is False:
+            self.get_logger().info("\tWith:")
+            self.get_logger().info("\t" + str(equality_type))
+            self.get_logger().info("\tThe following messages are equal to their comparison:")
+            self.get_logger().info("\t" + str(message_checks))
+            self.get_logger().info("\tComared against:")
+            self.get_logger().info("\t" + str(comparison))

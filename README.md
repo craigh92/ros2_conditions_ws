@@ -31,3 +31,7 @@ class MyNode(Node):
 #### CLI Tool
 
 TODO
+
+#### Implementation Details.
+
+The Condition Publishers wrap up Message Equality Testers. The Message Equality Testers subscribe to one or more topics and test the incoming messages against a predicate, and then call a callback function with the result of this predicate. The Condition Publisher simply sets this callback function to publish a condition message with the apropriate value.

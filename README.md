@@ -18,7 +18,15 @@ A Condition Publisher has one or more subscriptions to topics on the network (of
 
 #### Python API
 
-TODO
+Example:
+```python
+
+class MyNode(Node):
+  def __init__(self):
+      super().__init__('my_node')
+      self.__condpub = ConditionPublisher() TODO
+
+```
 
 #### CLI Tool
 

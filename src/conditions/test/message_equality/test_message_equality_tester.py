@@ -4,7 +4,7 @@ from std_msgs.msg import String
 from conditions.message_equality_tester_node import MessageEqualityTesterNode, MultiMessageEqualityTesterNode, EqualityType, TopicAndValuesPair
 import pytest
 from rclpy.task import Future
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor, SingleThreadedExecutor
 from typing import Dict
 from conditions.minimal_latching_publisher import MinimalPublisher, latching_qos
 import time
@@ -25,7 +25,7 @@ def start_minimal_publisher(function):
         print("Setup fixture")
         rclpy.init()
         minimal_publisher = MinimalPublisher()
-        exe = MultiThreadedExecutor()
+        exe = SingleThreadedExecutor()
         exe.add_node(minimal_publisher)
 
         #TEST
@@ -49,6 +49,7 @@ def start_3_publishers(function):
     """
     def decorated_function():
         #SETUP
+        print("Setup fixture")
 
         rclpy.init()
 
@@ -72,12 +73,13 @@ def start_3_publishers(function):
         node.get_logger().info("Publishing \"{}\" on topic \"{}\"".format("hello3", "topic3"))
         pub3.publish(msg3)
 
-        exe = MultiThreadedExecutor()
+        exe = SingleThreadedExecutor()
         exe.add_node(node)
+        future_message = Future()
 
         #TEST
 
-        function(exe)
+        result = function(future_message, exe)
 
         #TEARDOWN
 
@@ -85,6 +87,8 @@ def start_3_publishers(function):
         node.destroy_node()
         rclpy.shutdown()
         time.sleep(0.2)
+
+        return result
 
     return decorated_function
 
@@ -100,15 +104,13 @@ def start_a_message_equality_tester_node_and_get_result(future_result : Future, 
 
     return future_result.result()
 
-def start_multi_equality_tester(exe : MultiThreadedExecutor):
+def start_multi_equality_tester(future : Future, exe : MultiThreadedExecutor):
 
     topic_and_expected_values_pairs = [
         TopicAndValuesPair('topic1', 'std_msgs/msg/String', {'data' : 'hello1'}),
         TopicAndValuesPair('topic2', 'std_msgs/msg/String', {'data' : 'hello2'}),
         TopicAndValuesPair('topic3', 'std_msgs/msg/String', {'data' : 'hello3'}),
     ]
-
-    future = Future()
 
     node = MultiMessageEqualityTesterNode(topic_and_expected_values_pairs, EqualityType.ALLOF, future)
 
@@ -117,6 +119,7 @@ def start_multi_equality_tester(exe : MultiThreadedExecutor):
     exe.spin_until_future_complete(future)
 
     node.destroy_node()
+    return future.result()
 
 
 #BEGIN TESTS
@@ -144,6 +147,8 @@ def test_msg_is_not_equal():
 def test_all_msgs_on_3_topics_equal_expected():
 
     @start_3_publishers
-    def test(exe):
-        start_multi_equality_tester(exe)
-    test()
+    def test(future_message, exe):
+        return start_multi_equality_tester(future_message, exe)
+
+    result = test()
+    assert result is True

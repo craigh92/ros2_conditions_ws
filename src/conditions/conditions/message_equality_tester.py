@@ -59,6 +59,7 @@ class MessageEqualityTester:
 
         self.__callback(equal, actual_msg, expected_msg)
 
+
 class EqualityType(Enum):
     ALLOF=0
     ANYOF=1
@@ -70,8 +71,11 @@ class TopicAndValuesPair:
         self.topic_type = topic_type
         self.values = values
 
-def default_multi_message_callback(val : bool, message_checks : Dict[str,bool], comparison : TopicAndValuesPair, equality_type : EqualityType):
-    print("Message received and equality tested: " + str(val))
+
+def default_multi_message_callback(val : bool, message_checks : Dict[str,bool], comparison : List[TopicAndValuesPair], equality_type : EqualityType):
+    num_checked = len(message_checks)
+    num_to_check = len(comparison)
+    print("Message received and equality tested ({}/{}): {}".format(num_checked, num_to_check, str(val)))
     if val is False:
         print("\tWith:")
         print("\t" + str(equality_type))
@@ -92,7 +96,7 @@ class MultiMessageEqualityTester:
 
     def __init__(self, node : Node, topic_and_expected_values_pairs : List[TopicAndValuesPair],
         eqaulity_type : EqualityType,
-        callback : Callable[[bool, Dict[str,bool], TopicAndValuesPair, EqualityType],None] = default_multi_message_callback):
+        callback : Callable[[bool, Dict[str,bool], List[TopicAndValuesPair], EqualityType],None] = default_multi_message_callback):
         
         self.__equality_type = eqaulity_type
         self.__callback = callback
@@ -102,8 +106,8 @@ class MultiMessageEqualityTester:
             
             #Create MessageEqualityTester that store the result in __message_store when a new message
             #is received, and then perform the predicate check (which calls the callback)
-
-            def cb(val : bool, actual_msg : Dict, expected_values : Dict):
+ 
+            def cb(val : bool, actual_msg : Dict, expected_values : Dict, topic_and_expected_values_pair=topic_and_expected_values_pair):
                 self.__message_store[topic_and_expected_values_pair.topic_name] = val
                 self.__perform_check()
 
@@ -117,6 +121,7 @@ class MultiMessageEqualityTester:
         """
         Iterate over the message_store, and call the callback with the result of the predicate
         """
+         
         if self.__equality_type is EqualityType.ALLOF:
 
             alltrue = True

@@ -44,7 +44,10 @@ class MultiMessageEqualityTesterNode(Node):
         message_checks : Dict[str,bool], comparison : TopicAndValuesPair,
         equality_type : EqualityType):
 
-        self.get_logger().info("Message received and equality tested:quality tested: {}".format(str(val)))
+        num_checked = len(message_checks)
+        num_to_check = len(comparison)
+
+        self.get_logger().info("Message received and equality tested ({}/{}): {}".format(num_checked, num_to_check, str(val)))
         if val is False:
             self.get_logger().info("\tWith:")
             self.get_logger().info("\t" + str(equality_type))
@@ -52,3 +55,6 @@ class MultiMessageEqualityTesterNode(Node):
             self.get_logger().info("\t" + str(message_checks))
             self.get_logger().info("\tComared against:")
             self.get_logger().info("\t" + str(comparison))
+        
+        if num_checked is num_to_check:
+            self.__future_result.set_result(val)

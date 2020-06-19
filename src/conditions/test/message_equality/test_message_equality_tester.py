@@ -105,7 +105,7 @@ def start_multi_equality_tester(exe : MultiThreadedExecutor):
     topic_and_expected_values_pairs = [
         TopicAndValuesPair('topic1', 'std_msgs/msg/String', {'data' : 'hello1'}),
         TopicAndValuesPair('topic2', 'std_msgs/msg/String', {'data' : 'hello2'}),
-        TopicAndValuesPair('topic3', 'std_msgs/msg/String', {'data' : 'hello2'}),
+        TopicAndValuesPair('topic3', 'std_msgs/msg/String', {'data' : 'hello3'}),
     ]
 
     future = Future()

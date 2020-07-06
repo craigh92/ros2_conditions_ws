@@ -6,9 +6,9 @@ from typing import List, Optional, Dict
 from condition_msgs.msg import Condition
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from enum import IntEnum
-from conditions.message_equality_tester import MessageEqualityTester
-
+from conditions.message_equality_tester import MessageEqualityTester, MultiMessageEqualityTester, EqualityType
 from rclpy.task import Future
+from conditions.message_equality_tester_node import TopicAndValuesPair
 
 class ConditionEnum(IntEnum):
     ACTIVE=0
@@ -18,6 +18,10 @@ class ConditionEnum(IntEnum):
     UNKNOWN=4
 
 class ConditionPublisher:
+    """
+    This class is constructed with a ros node, which it adds a publisher to.
+    """
+
     def __init__(self, node : Node, condition_name : str):
 
         latching_qos = QoSProfile(depth=1, history=1,
@@ -58,7 +62,6 @@ class ConditionPublisher:
         
         return future
 
-    __cache = {}
     def add_allof_equality_check(self, topic_names_and_expected_values : List[Dict]):
         """
         Subscribe to multiple topics, and publish a Condition message on receit of a new message. The Condition
@@ -67,24 +70,16 @@ class ConditionPublisher:
 
         future = Future()
 
-        for value_dict in topic_names_and_expected_values:
-            topic_name = value_dict['topic']
-            topic_type = value_dict['type']
-            expected_values_dict = value_dict['expected_values']
-        
-            def equality_check_cb(val : bool, actual_msg : Dict, expected_values : Dict):
-                self.__cache[topic_name] = val
-                allTrue = True
-                for key in self.__cache:
-                    if self.__cache[key] is False:
-                        allTrue = False
-                if allTrue:
-                    self.publish(ConditionEnum.ACTIVE)
-                else:
-                    message = topic_name + " value is not equal to " + str(expected_values) + " (actual value: " + str(actual_msg) + ")"
-                    self.publish(ConditionEnum.INACTIVE, message)               
-                future.set_result(allTrue)
+        def equality_check_cb(val : bool, message_checks : Dict[str,bool], comparison : List[TopicAndValuesPair], equality_type : EqualityType):
+            self.__node.get_logger().info("All messages received and equality tested {}".format(str(val)))
+            if val is True:
+                self.publish(ConditionEnum.ACTIVE)
+            else:
+                failed = list(filter(lambda key : message_checks[key] is True, message_checks))
+                self.publish(ConditionEnum.INACTIVE, "The following checks failed: " + str(failed))
 
-            MessageEqualityTester(self.__node, topic_name, topic_type, expected_values_dict ,equality_check_cb)
-            
+            future.set_result(val)
+
+        MultiMessageEqualityTester(self.__node, topic_names_and_expected_values, EqualityType.ALLOF, equality_check_cb)
+
         return future

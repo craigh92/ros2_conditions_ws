@@ -21,7 +21,7 @@ class MessageEqualityTesterNode(Node):
         self.__future_result = future_result
 
     def __callback(self, val : bool, actual_msg : Dict, expected_values : Dict):
-        self.get_logger().info("Message received and equality tested:quality tested: {}".format(str(val)))
+        self.get_logger().info("Message received and equality tested: {}".format(str(val)))
         if val is False:
             self.get_logger().info("\tExpected: {}".format(str(expected_values)))
             self.get_logger().info("\tActual: {}".format(str(actual_msg)))
@@ -44,17 +44,11 @@ class MultiMessageEqualityTesterNode(Node):
         message_checks : Dict[str,bool], comparison : TopicAndValuesPair,
         equality_type : EqualityType):
 
-        num_checked = len(message_checks)
-        num_to_check = len(comparison)
-
-        self.get_logger().info("Message received and equality tested ({}/{}): {}".format(num_checked, num_to_check, str(val)))
+        self.get_logger().info("All Messages received and equality tested : {}".format(str(val)))
         if val is False:
             self.get_logger().info("\tWith:")
             self.get_logger().info("\t" + str(equality_type))
             self.get_logger().info("\tThe following messages are equal to their comparison:")
             self.get_logger().info("\t" + str(message_checks))
-            self.get_logger().info("\tComared against:")
-            self.get_logger().info("\t" + str(comparison))
         
-        if num_checked is num_to_check:
-            self.__future_result.set_result(val)
+        self.__future_result.set_result(val)

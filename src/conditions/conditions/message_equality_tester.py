@@ -33,6 +33,8 @@ class MessageEqualityTester:
         
         node.get_logger().info("Subscribing to \"{}\" of type \"{}\"".format(topic_name, message_type))
         
+        node.get_logger().info("Expecting to recieve message with value \"{}\"".format(str(expected_values)))
+
         self.__sub = node.create_subscription(get_message(message_type), topic_name, self.__sub_callback,
             qos_profile=latching_qos)
 
@@ -73,16 +75,12 @@ class TopicAndValuesPair:
 
 
 def default_multi_message_callback(val : bool, message_checks : Dict[str,bool], comparison : List[TopicAndValuesPair], equality_type : EqualityType):
-    num_checked = len(message_checks)
-    num_to_check = len(comparison)
-    print("Message received and equality tested ({}/{}): {}".format(num_checked, num_to_check, str(val)))
+    print("Messages received and equality tested {}".format(str(val)))
     if val is False:
         print("\tWith:")
         print("\t" + str(equality_type))
         print("\tThe following messages are equal to their comparison:")
         print("\t" + str(message_checks))
-        print("\tComared against:")
-        print("\t" + str(comparison))
 
 class MultiMessageEqualityTester:
     """
@@ -102,14 +100,23 @@ class MultiMessageEqualityTester:
         self.__callback = callback
         self.__topic_and_expected_values_pairs = topic_and_expected_values_pairs
     
+        node.get_logger().info("Setting up subscriptions")
+
         for topic_and_expected_values_pair in topic_and_expected_values_pairs:
             
             #Create MessageEqualityTester that store the result in __message_store when a new message
             #is received, and then perform the predicate check (which calls the callback)
  
             def cb(val : bool, actual_msg : Dict, expected_values : Dict, topic_and_expected_values_pair=topic_and_expected_values_pair):
+                
+                #Store the value of that message
                 self.__message_store[topic_and_expected_values_pair.topic_name] = val
-                self.__perform_check()
+                
+                node.get_logger().info("Message received ({}/{})".format(len(self.__message_store), len(topic_and_expected_values_pairs)))
+                
+                if(len(self.__message_store) == len(topic_and_expected_values_pairs)):
+                    node.get_logger().info("All messages received, performing check")
+                    self.__perform_check()
 
             tester = MessageEqualityTester(node, topic_and_expected_values_pair.topic_name,
                 topic_and_expected_values_pair.topic_type,
@@ -117,8 +124,11 @@ class MultiMessageEqualityTester:
 
             self.__testers.append(tester)
 
+        node.get_logger().info("Waiting for at least one message on each topic...")
+
     def __perform_check(self):
         """
+        Gets called when at least one message on each topic has arrived.
         Iterate over the message_store, and call the callback with the result of the predicate
         """
          

@@ -43,6 +43,7 @@ def main():
     node = MessageEqualityTesterNode(args.name, args.type, values_dictionary, future)
 
     rclpy.spin_until_future_complete(node, future, timeout_sec=args.timeout)
+    
     if not future.done():
         node.get_logger().error(
             "Timeout after " + str(args.timeout) + 

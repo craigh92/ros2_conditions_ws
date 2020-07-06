@@ -20,7 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'condition_publisher = conditions.condition_publisher:main'
+            'condition_publisher = conditions.condition_publisher_cli:main',
+            'message_equality_tester = conditions.message_equality_tester_cli:main',
+            'multi_message_equality_tester = conditions.multi_message_equality_tester_cli:main'
         ],
     },
 )

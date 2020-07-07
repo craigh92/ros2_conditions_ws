@@ -3,6 +3,7 @@ from conditions.condition_publisher import ConditionPublisher, ConditionEnum
 from typing import Dict, List
 import os
 from rclpy.task import Future
+from conditions.message_equality_tester_node import TopicAndValuesPair
 
 class ConditionPublisherNode(Node):
     def __init__(self, name : str):
@@ -15,5 +16,5 @@ class ConditionPublisherNode(Node):
     def add_single_equality_check(self, topic_name : str, topic_type : str, expected_values : Dict) -> Future:
         return self.__condpub.add_single_equality_check(topic_name, topic_type, expected_values)
 
-    def add_allof_equality_check(self, topic_names_and_expected_values : List[Dict]) -> Future:
+    def add_allof_equality_check(self, topic_names_and_expected_values : List[TopicAndValuesPair]) -> Future:
         return self.__condpub.add_allof_equality_check(topic_names_and_expected_values)

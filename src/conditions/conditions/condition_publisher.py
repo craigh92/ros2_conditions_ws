@@ -62,7 +62,7 @@ class ConditionPublisher:
         
         return future
 
-    def add_allof_equality_check(self, topic_names_and_expected_values : List[Dict]):
+    def add_allof_equality_check(self, topic_names_and_expected_values : List[TopicAndValuesPair]):
         """
         Subscribe to multiple topics, and publish a Condition message on receit of a new message. The Condition
         will be active if the last message published on all of the topics is equal to the associated expected values.

@@ -2,13 +2,13 @@ import rclpy
 from rclpy.node import Node
 import os
 import typing
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Type, Any
 from condition_msgs.msg import Condition
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 from enum import IntEnum
-from conditions.message_equality_tester import MessageEqualityTester, MultiMessageEqualityTester, EqualityType
+from conditions.private.message_equality_tester import MessageEqualityTester, MultiMessageEqualityTester, EqualityType
 from rclpy.task import Future
-from conditions.message_equality_tester_node import TopicAndValuesPair
+from conditions.private.message_equality_tester_node import TopicAndValuesPair
 
 class ConditionEnum(IntEnum):
     ACTIVE=0
@@ -17,12 +17,33 @@ class ConditionEnum(IntEnum):
     SUPPRESSED=3
     UNKNOWN=4
 
+
+#TODO Change TopicAndValuesPair to this
+# class PredicateArgs:
+#     """
+#     The arguments used to check if the last message received on a topic is equal to an expected value
+#     """
+#     def __init__(self, topic_name: str, topic_type: Type, expected_vale: Dict[str, Any]):
+#         self.topic_name: str = topic_name
+#         self.topic_type: Type = topic_type
+#         self.expected_vale: Dict[str, Any] = expected_vale
+
 class ConditionPublisher:
     """
-    This class is constructed with a ros node, which it adds a publisher to.
+    This class is constructed with a ros node, which it adds a publisher to.... TODO and subscriptions, cache etc
+    This only publishes one condition, which it why it is not a node. Compose multiple of these inside a ros node
+    if multiple conditions should be published.
     """
 
-    def __init__(self, node : Node, condition_name : str):
+    def __init__(self,
+        node: Node,
+        condition_name: str,
+        *,
+        all_of_equality_check: Optional[List[TopicAndValuesPair]] = None,
+        any_of_equality_check: Optional[List[TopicAndValuesPair]] = None,
+        ex_any_of_equality_check: Optional[List[TopicAndValuesPair]] = None
+        #intersection_check: Optional[PointAndVolume]
+        ):
 
         latching_qos = QoSProfile(depth=1, history=1,
             durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
@@ -30,6 +51,13 @@ class ConditionPublisher:
         self.__node = node
         self.__pub = node.create_publisher(Condition, condition_name, qos_profile=latching_qos)
         self.publish(ConditionEnum.UNKNOWN, "No message has been received")
+
+        if all_of_equality_check is not None:
+            self.add_allof_equality_check(all_of_equality_check)
+        if any_of_equality_check is not None:
+            raise NotImplementedError()
+        if ex_any_of_equality_check is not None:
+            raise NotImplementedError()
 
     def publish(self, condition : ConditionEnum, message : str=""):
         """

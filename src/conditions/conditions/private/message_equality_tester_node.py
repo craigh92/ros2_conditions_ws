@@ -1,6 +1,6 @@
 from rclpy.node import Node
 from rclpy.task import Future
-from conditions.message_equality_tester import MessageEqualityTester, default_callback, MultiMessageEqualityTester, EqualityType, TopicAndValuesPair
+from conditions.private.message_equality_tester import MessageEqualityTester, default_callback, MultiMessageEqualityTester, EqualityType, TopicAndValuesPair
 from typing import Dict, Any, List
 import os
 
